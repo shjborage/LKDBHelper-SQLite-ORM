@@ -14,7 +14,7 @@ thread-safe and not afraid of recursive deadlock
 * 还增加了两个添加列的方法,方便在表版本升级的时候调用。<br>
 * 为了 支持多数据库 取消了 `shareDBHelper` 这个方法, <br>
 改成 `[modelClass getUsingDBHelper]`  这样每个model 可以重载 , 选择要使用的数据库<br>
-可以看 `NSObject+LKDBHelper` 里面 的方法<br>
+可以看 `NSObject+LKDBModel` 里面 的方法<br>
 #v1.1
 * Support `column name`  binding  `attributes`. <br>
 * You can also set the properties of the column. <br>
@@ -25,7 +25,7 @@ thread-safe and not afraid of recursive deadlock
 * Also added two ways to add columns for easy upgrades in the table when called. <br>
 * In order to support multiple databases canceled `shareDBHelper` this method, <br>
 Changed to `[modelClass getUsingDBHelper]` so that each model can be overloaded, select the database you want to use <br>
-You can see `NSObject LKDBHelper` method inside <br>
+You can see `NSObject+LKDBModel` method inside <br>
 
 ------------------------------------
 Requirements
