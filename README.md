@@ -1,6 +1,6 @@
 LKDBHelper
 ====================================
-this is sqlite ORM (an automatic database operation) <br>
+This is sqlite ORM (an automatic database operation) <br>
 thread-safe and not afraid of recursive deadlock
 
 新版 添加字段的时候  可以直接  定义属性就好了  不用再调用  [self tableUpdateAddColumnWithPN:@"color"]; 这种的方法了
