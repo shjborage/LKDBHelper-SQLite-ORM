@@ -13,7 +13,7 @@
 
 +(void)dbDidCreateTable:(LKDBHelper *)helper{}
 
-+(void)dbDidIDeleted:(NSObject *)entity result:(BOOL)result{}
++(void)dbDidDeleted:(NSObject *)entity result:(BOOL)result{}
 +(void)dbDidInserted:(NSObject *)entity result:(BOOL)result{}
 +(void)dbDidUpdated:(NSObject *)entity result:(BOOL)result{}
 
@@ -100,11 +100,11 @@
 
 - (BOOL)saveToDB
 {
-   return [self.class insertToDB:self];
+    return [self.class insertToDB:self];
 }
 - (BOOL)deleteToDB
 {
-   return [self.class deleteToDB:self];
+  return [self.class deleteToDB:self];
 }
 -(BOOL)isExistsFromDB
 {

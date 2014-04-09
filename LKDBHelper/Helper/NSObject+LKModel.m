@@ -65,6 +65,9 @@ static char LKModelBase_Key_RowID;
     return nil;
 }
 #pragma mark- Table Data Function 表数据
++(NSDateFormatter*)getModelDateFormatter{
+    return nil;
+}
 -(id)modelGetValue:(LKDBProperty *)property
 {
     id value = [self valueForKey:property.propertyName];
@@ -83,7 +86,14 @@ static char LKModelBase_Key_RowID;
     }
     else if([value isKindOfClass:[NSDate class]])
     {
-        returnValue = [LKDBUtils stringWithDate:value];
+        NSDateFormatter* formatter = [self.class getModelDateFormatter];
+        if(formatter){
+            returnValue = [formatter stringFromDate:value];
+        }
+        else{
+            returnValue = [LKDBUtils stringWithDate:value];
+        }
+        returnValue = [returnValue stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
     }
     else if([value isKindOfClass:[UIColor class]])
     {
@@ -95,6 +105,7 @@ static char LKModelBase_Key_RowID;
     else if([value isKindOfClass:[NSValue class]])
     {
         NSString* columnType = property.propertyType;
+#ifdef __IPHONE_OS_VERSION_MIN_REQUIRED
         if([columnType isEqualToString:@"CGRect"])
         {
             returnValue = NSStringFromCGRect([value CGRectValue]);
@@ -107,6 +118,20 @@ static char LKModelBase_Key_RowID;
         {
             returnValue = NSStringFromCGSize([value CGSizeValue]);
         }
+#else
+        if([columnType hasSuffix:@"Rect"])
+        {
+            returnValue = NSStringFromRect([value rectValue]);
+        }
+        else if([columnType hasSuffix:@"Point"])
+        {
+            returnValue = NSStringFromPoint([value pointValue]);
+        }
+        else if([columnType hasSuffix:@"Size"])
+        {
+            returnValue = NSStringFromSize([value sizeValue]);
+        }
+#endif
     }
     else if([value isKindOfClass:[UIImage class]])
     {
@@ -114,7 +139,14 @@ static char LKModelBase_Key_RowID;
         long date = [[NSDate date] timeIntervalSince1970];
         NSString* filename = [NSString stringWithFormat:@"img%ld%ld",date&0xFFFFF,random&0xFFF];
         
+#ifdef __IPHONE_OS_VERSION_MIN_REQUIRED
         NSData* datas = UIImageJPEGRepresentation(value, 1);
+#else
+        [value lockFocus];
+        NSBitmapImageRep *srcImageRep = [NSBitmapImageRep imageRepWithData:[value TIFFRepresentation]];
+        NSData* datas = [srcImageRep representationUsingType:NSJPEGFileType properties:nil];
+        [value unlockFocus];
+#endif
         [datas writeToFile:[self.class getDBImagePathWithName:filename] atomically:YES];
         
         returnValue = filename;
@@ -150,14 +182,27 @@ static char LKModelBase_Key_RowID;
     }
     else if([LKSQL_Convert_IntType rangeOfString:columnType].location != NSNotFound)
     {
-        modelValue = [NSNumber numberWithInteger:[value intValue]];
+        if([columnType isEqualToString:@"long"])
+        {
+            modelValue = [NSNumber numberWithLongLong:[value longLongValue]];
+        }
+        else
+        {
+            modelValue = [NSNumber numberWithInteger:[value intValue]];
+        }
     }
     else if([columnType isEqualToString:@"NSDate"])
     {
-        NSString* datestr = value;
+        NSString* datestr = [value stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
+        NSDateFormatter* formatter = [self.class getModelDateFormatter];
+        if(formatter){
+            modelValue = [formatter dateFromString:datestr];
+        }
+        else{
         modelValue = [LKDBUtils dateWithString:datestr];
+        }
     }
-    else if([columnType isEqualToString:@"UIColor"])
+    else if([columnType isEqualToString:NSStringFromClass([UIColor class])])
     {
         NSString* color = value;
         NSArray* array = [color componentsSeparatedByString:@","];
@@ -169,6 +214,7 @@ static char LKModelBase_Key_RowID;
         
         modelValue = [UIColor colorWithRed:r green:g blue:b alpha:a];
     }
+#ifdef __IPHONE_OS_VERSION_MIN_REQUIRED
     else if([columnType isEqualToString:@"CGRect"])
     {
         modelValue = [NSValue valueWithCGRect:CGRectFromString(value)];
@@ -181,13 +227,27 @@ static char LKModelBase_Key_RowID;
     {
         modelValue = [NSValue valueWithCGSize:CGSizeFromString(value)];
     }
-    else if([columnType isEqualToString:@"UIImage"])
+#else
+    else if([columnType hasSuffix:@"Rect"])
+    {
+        modelValue = [NSValue valueWithRect:NSRectFromString(value)];
+    }
+    else if([columnType hasSuffix:@"Point"])
+    {
+        modelValue = [NSValue valueWithPoint:NSPointFromString(value)];
+    }
+    else if([columnType hasSuffix:@"Size"])
+    {
+        modelValue = [NSValue valueWithSize:NSSizeFromString(value)];
+    }
+#endif
+    else if([columnType isEqualToString:NSStringFromClass([UIImage class])])
     {
         NSString* filename = value;
         NSString* filepath = [self.class getDBImagePathWithName:filename];
         if([LKDBUtils isFileExists:filepath])
         {
-            UIImage* img = [UIImage imageWithContentsOfFile:filepath];
+            UIImage* img = [[UIImage alloc] initWithContentsOfFile:filepath];
             modelValue = img;
         }
         else
@@ -369,7 +429,7 @@ static char LKModelBase_Key_RowID;
         else
         {
             propertyType = [propertyType lowercaseString];
-            if ([propertyType hasPrefix:@"ti"] || [propertyType hasPrefix:@"tq"] || [propertyType hasPrefix:@"tb"])
+            if ([propertyType hasPrefix:@"ti"] || [propertyType hasPrefix:@"tb"])
             {
                 [protypes addObject:@"int"];
             }
@@ -380,7 +440,7 @@ static char LKModelBase_Key_RowID;
             else if([propertyType hasPrefix:@"td"]) {
                 [protypes addObject:@"double"];
             }
-            else if([propertyType hasPrefix:@"tl"])
+            else if([propertyType hasPrefix:@"tl"] || [propertyType hasPrefix:@"tq"])
             {
                 [protypes addObject:@"long"];
             }
